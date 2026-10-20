@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Holiday Tracker — Team Portal</title>
+  <meta name="description" content="Team holiday booking and tracking system with approval workflow">
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&display=swap"
+    rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+  <!-- Toast notifications -->
+  <div id="toast-container"></div>
+
+  <!-- ═══════════════════════════ LOGIN VIEW ═══════════════════════════ -->
+  <div id="view-login">
+    <div class="login-bg">
+      <div class="login-particles">
+        <span></span><span></span><span></span><span></span><span></span>
+      </div>
+      <div class="login-card">
+        <div class="login-logo">
+          <i class="fas fa-umbrella-beach"></i>
+        </div>
+        <h1 class="login-title">Holiday Tracker</h1>
+        <p class="login-subtitle">Sign in to manage your time off</p>
+
+        <form id="login-form" autocomplete="off" novalidate>
+          <div class="form-group">
+            <label for="login-name">Your Name</label>
+            <div class="input-wrapper">
+              <i class="fas fa-user input-icon"></i>
+              <select id="login-name" required>
+                <option value="">Select your name…</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="login-password">Password</label>
+            <div class="input-wrapper">
+              <i class="fas fa-lock input-icon"></i>
+              <input type="password" id="login-password" placeholder="Enter your password" required>
+              <button type="button" id="toggle-pw" class="pw-toggle" aria-label="Toggle password">
+                <i class="fas fa-eye"></i>
+              </button>
+            </div>
+          </div>
+          <div id="login-error" class="login-error hidden">
+            <i class="fas fa-exclamation-circle"></i> Invalid name or password
+          </div>
+          <button type="submit" class="btn btn-primary btn-full" id="login-btn">
+            <span class="btn-text"><i class="fas fa-sign-in-alt"></i> Sign In</span>
+            <span class="btn-loader hidden"><i class="fas fa-spinner fa-spin"></i></span>
+          </button>
+        </form>
+
+        <div class="login-hint">
+          <i class="fas fa-info-circle"></i>
+          Default password: <code>password123</code> &nbsp;|&nbsp; Admin: <code>admin123</code>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════ APP SHELL ═══════════════════════════ -->
+  <div id="app" class="hidden">
+
+    <!-- Sidebar -->
+    <aside id="sidebar">
+      <div class="sidebar-brand">
+        <div class="brand-icon"><i class="fas fa-umbrella-beach"></i></div>
+        <span>Holiday Tracker</span>
+      </div>
+
+      <div class="sidebar-user">
+        <div id="nav-user-avatar" class="user-avatar-sm">A</div>
+        <div class="user-info">
+          <div id="nav-user-name" class="user-name">Loading…</div>
+          <div id="nav-user-role" class="user-role">Employee</div>
+        </div>
+      </div>
+
+      <nav class="sidebar-nav">
+        <a href="#" class="nav-link" data-view="dashboard">
+          <i class="fas fa-home"></i><span>Dashboard</span>
+        </a>
+        <a href="#" class="nav-link" data-view="book">
+          <i class="fas fa-calendar-plus"></i><span>Book Holiday</span>
+        </a>
+        <a href="#" class="nav-link" data-view="my-holidays">
+          <i class="fas fa-list-ul"></i><span>My Holidays</span>
+          <span id="nav-badge-pending" class="nav-badge hidden"></span>
+        </a>
+        <a href="#" class="nav-link hidden" id="nav-admin-link" data-view="admin">
+          <i class="fas fa-shield-halved"></i><span>Admin Panel</span>
+          <span id="nav-badge-admin" class="nav-badge nav-badge-warn hidden"></span>
+        </a>
+        <a href="#" class="nav-link" data-view="settings">
+          <i class="fas fa-gear"></i><span>Settings</span>
+        </a>
+      </nav>
+
+      <button id="btn-logout" class="btn-logout">
+        <i class="fas fa-right-from-bracket"></i><span>Sign Out</span>
+      </button>
+    </aside>
+
+    <button id="sidebar-toggle" class="sidebar-toggle" aria-label="Toggle menu">
+      <i class="fas fa-bars"></i>
+    </button>
+
+    <!-- Main content -->
+    <main id="content">
+
+      <!-- ─── DASHBOARD ─── -->
+      <div id="view-dashboard" class="app-view">
+        <div class="page-header">
+          <div>
+            <h1 id="dash-greeting">Good morning!</h1>
+            <p class="page-subtitle">Here's your holiday overview for <span id="dash-year">2026</span></p>
+          </div>
+          <button class="btn btn-primary" onclick="Router.navigate('book')">
+            <i class="fas fa-plus"></i> Book Holiday
+          </button>
+        </div>
+
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-icon indigo"><i class="fas fa-calendar-check"></i></div>
+            <div class="stat-body">
+              <div class="stat-value" id="stat-allowance">28</div>
+              <div class="stat-label">Total Allowance</div>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon green"><i class="fas fa-circle-check"></i></div>
+            <div class="stat-body">
+              <div class="stat-value" id="stat-approved">0</div>
+              <div class="stat-label">Days Approved</div>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon amber"><i class="fas fa-clock"></i></div>
+            <div class="stat-body">
+              <div class="stat-value" id="stat-pending">0</div>
+              <div class="stat-label">Days Pending</div>
+            </div>
+          </div>
+          <div class="stat-card stat-card-accent">
+            <div class="stat-icon cyan"><i class="fas fa-sun"></i></div>
+            <div class="stat-body">
+              <div class="stat-value" id="stat-remaining">20</div>
+              <div class="stat-label">Days Remaining</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card progress-card">
+          <div class="progress-header">
+            <span id="days-progress-label">0 of 28 days used</span>
+            <span class="progress-pct" id="days-progress-pct">0%</span>
+          </div>
+          <div class="progress-track">
+            <div class="progress-fill" id="days-progress"></div>
+          </div>
+          <p class="bh-note">
+            <i class="fas fa-circle-info"></i>
+            Your 28-day allowance includes UK bank holidays. Bank holidays are shown on the calendar and don't count
+            against your bookable days.
+          </p>
+        </div>
+
+        <div class="dashboard-grid">
+          <div class="card calendar-card">
+            <div class="card-header">
+              <h2><i class="fas fa-calendar"></i> Team Calendar</h2>
+              <div class="cal-nav">
+                <button id="cal-prev" class="btn-icon" aria-label="Previous month"><i
+                    class="fas fa-chevron-left"></i></button>
+                <span id="cal-month-label" class="cal-month-label">October 2026</span>
+                <button id="cal-next" class="btn-icon" aria-label="Next month"><i
+                    class="fas fa-chevron-right"></i></button>
+              </div>
+            </div>
+            <div id="cal-grid" class="cal-grid"></div>
+            <div id="cal-legend" class="cal-legend"></div>
+          </div>
+
+          <div class="card upcoming-card">
+            <div class="card-header">
+              <h2><i class="fas fa-plane-departure"></i> Upcoming</h2>
+            </div>
+            <div id="upcoming-list" class="upcoming-list"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ─── BOOK HOLIDAY ─── -->
+      <div id="view-book" class="app-view">
+        <div class="page-header">
+          <div>
+            <h1>Book a Holiday</h1>
+            <p class="page-subtitle">Submit a new time-off request</p>
+          </div>
+        </div>
+
+        <div class="two-col-layout">
+          <div class="card form-card">
+            <form id="book-form" novalidate>
+              <div class="form-row-2">
+                <div class="form-group">
+                  <label for="book-start">Start Date</label>
+                  <div class="input-wrapper">
+                    <i class="fas fa-calendar-day input-icon"></i>
+                    <input type="date" id="book-start" required>
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label for="book-end">End Date</label>
+                  <div class="input-wrapper">
+                    <i class="fas fa-calendar-day input-icon"></i>
+                    <input type="date" id="book-end" required>
+                  </div>
+                </div>
+              </div>
+
+              <div id="book-days-preview" class="days-preview hidden"></div>
+
+              <div class="form-group">
+                <label for="book-reason">Notes <span class="optional">(optional)</span></label>
+                <div class="input-wrapper textarea-wrapper">
+                  <i class="fas fa-comment-alt input-icon"></i>
+                  <textarea id="book-reason" placeholder="Any notes for the admin…" rows="3"></textarea>
+                </div>
+              </div>
+
+              <div class="form-actions">
+                <button type="submit" class="btn btn-primary">
+                  <i class="fas fa-paper-plane"></i> Submit Request
+                </button>
+                <button type="button" class="btn btn-ghost" onclick="Router.navigate('my-holidays')">
+                  Cancel
+                </button>
+              </div>
+            </form>
+          </div>
+
+          <div class="card info-card">
+            <h3><i class="fas fa-circle-info"></i> How it works</h3>
+            <ul class="info-list">
+              <li><i class="fas fa-check"></i> Working days = Mon–Fri only</li>
+              <li><i class="fas fa-check"></i> UK bank holidays are excluded from your count</li>
+              <li><i class="fas fa-check"></i> Requests are <span class="badge badge-pending">pending</span> until admin
+                approves</li>
+              <li><i class="fas fa-check"></i> Overlapping requests are not allowed</li>
+              <li><i class="fas fa-check"></i> You can cancel a pending request any time</li>
+            </ul>
+            <div class="bh-list-title">2026 UK Bank Holidays</div>
+            <ul class="bh-list" id="bh-list-2026"></ul>
+          </div>
+        </div>
+      </div>
+
+      <!-- ─── MY HOLIDAYS ─── -->
+      <div id="view-my-holidays" class="app-view">
+        <div class="page-header">
+          <div>
+            <h1>My Holidays</h1>
+            <p class="page-subtitle">All your holiday requests</p>
+          </div>
+          <button class="btn btn-primary" onclick="Router.navigate('book')">
+            <i class="fas fa-plus"></i> Book New
+          </button>
+        </div>
+
+        <div class="card table-card">
+          <div class="table-responsive">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Start</th>
+                  <th>End</th>
+                  <th>Days</th>
+                  <th>Notes</th>
+                  <th>Status</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody id="my-holidays-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ─── ADMIN PANEL ─── -->
+      <div id="view-admin" class="app-view">
+        <div class="page-header">
+          <div>
+            <h1>Admin Panel</h1>
+            <p class="page-subtitle">Review and manage team holiday requests</p>
+          </div>
+        </div>
+
+        <!-- Team overview -->
+        <div id="admin-team-grid" class="admin-team-grid"></div>
+
+        <div class="card" style="margin-bottom:1.5rem">
+          <div class="card-header">
+            <h2><i class="fas fa-hourglass-half"></i> Pending Approvals</h2>
+            <span id="pending-count-badge" class="badge badge-pending"></span>
+          </div>
+          <div id="admin-pending-list" class="admin-pending-list"></div>
+        </div>
+
+        <div class="card table-card">
+          <div class="card-header">
+            <h2><i class="fas fa-table-list"></i> All Requests</h2>
+            <div class="table-filter">
+              <select id="admin-filter-user">
+                <option value="">All employees</option>
+              </select>
+              <select id="admin-filter-status">
+                <option value="">All statuses</option>
+                <option value="pending">Pending</option>
+                <option value="approved">Approved</option>
+                <option value="rejected">Rejected</option>
+              </select>
+            </div>
+          </div>
+          <div class="table-responsive">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Employee</th>
+                  <th>Start</th>
+                  <th>End</th>
+                  <th>Days</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="admin-all-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ─── SETTINGS ─── -->
+      <div id="view-settings" class="app-view">
+        <div class="page-header">
+          <div>
+            <h1>Settings</h1>
+            <p class="page-subtitle">Manage your account preferences</p>
+          </div>
+        </div>
+
+        <div class="settings-grid">
+          <div class="card profile-card">
+            <div class="profile-avatar-lg" id="settings-avatar">A</div>
+            <div id="settings-username" class="profile-name">Alice</div>
+            <div id="settings-role-badge" class="profile-role-badge">Employee</div>
+            <div class="profile-stats">
+              <div class="profile-stat">
+                <div class="profile-stat-val" id="settings-stat-remaining">—</div>
+                <div class="profile-stat-label">Days Remaining</div>
+              </div>
+              <div class="profile-stat">
+                <div class="profile-stat-val" id="settings-stat-approved">—</div>
+                <div class="profile-stat-label">Days Used</div>
+              </div>
+              <div class="profile-stat">
+                <div class="profile-stat-val">28</div>
+                <div class="profile-stat-label">Allowance</div>
+              </div>
+            </div>
+          </div>
+
+          <div style="display:flex;flex-direction:column;gap:1.25rem">
+
+            <div class="card">
+              <div class="card-header">
+                <h2><i class="fas fa-lock"></i> Change Password</h2>
+              </div>
+              <form id="settings-form" novalidate>
+                <div class="form-group">
+                  <label for="settings-current-pw">Current Password</label>
+                  <div class="input-wrapper">
+                    <i class="fas fa-lock input-icon"></i>
+                    <input type="password" id="settings-current-pw" placeholder="Your current password" required
+                      autocomplete="current-password">
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label for="settings-new-pw">New Password</label>
+                  <div class="input-wrapper">
+                    <i class="fas fa-key input-icon"></i>
+                    <input type="password" id="settings-new-pw" placeholder="At least 6 characters" required
+                      autocomplete="new-password">
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label for="settings-confirm-pw">Confirm New Password</label>
+                  <div class="input-wrapper">
+                    <i class="fas fa-key input-icon"></i>
+                    <input type="password" id="settings-confirm-pw" placeholder="Repeat new password" required
+                      autocomplete="new-password">
+                  </div>
+                </div>
+                <button type="submit" class="btn btn-primary">
+                  <i class="fas fa-floppy-disk"></i> Update Password
+                </button>
+              </form>
+            </div>
+
+            <div class="card">
+              <div class="card-header">
+                <h2><i class="fas fa-user-pen"></i> Change Username</h2>
+              </div>
+              <form id="settings-username-form" novalidate>
+                <div class="form-group">
+                  <label for="settings-new-username">New Username</label>
+                  <div class="input-wrapper">
+                    <i class="fas fa-user input-icon"></i>
+                    <input type="text" id="settings-new-username" placeholder="Enter new display name" required
+                      autocomplete="off">
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label for="settings-username-pw">Current Password <span class="optional">(to confirm)</span></label>
+                  <div class="input-wrapper">
+                    <i class="fas fa-lock input-icon"></i>
+                    <input type="password" id="settings-username-pw" placeholder="Enter your password" required
+                      autocomplete="current-password">
+                  </div>
+                </div>
+                <button type="submit" class="btn btn-primary">
+                  <i class="fas fa-floppy-disk"></i> Update Username
+                </button>
+              </form>
+            </div>
+          </div>
+        </div>
+
+    </main>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+
+</html>
