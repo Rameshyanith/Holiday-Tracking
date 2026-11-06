@@ -100,6 +100,21 @@ function greeting() {
   return 'Good evening';
 }
 
+// Build a pre-filled Outlook Web calendar deep-link URL
+function outlookCalendarUrl(h, userName) {
+  // Outlook all-day events use an exclusive end date, so add 1 day
+  const endExclusive = new Date(h.endDate + 'T00:00:00');
+  endExclusive.setDate(endExclusive.getDate() + 1);
+  const endStr = toStr(endExclusive);
+  const subject = encodeURIComponent(`Annual Leave – ${userName}`);
+  const body = encodeURIComponent(
+    `Holiday booked via Holiday Tracking System.\n` +
+    `Duration: ${h.days} working day${h.days !== 1 ? 's' : ''}` +
+    (h.reason ? `\nReason: ${h.reason}` : '')
+  );
+  return `https://outlook.office.com/calendar/action/compose?subject=${subject}&startdt=${h.startDate}&enddt=${endStr}&allday=true&body=${body}`;
+}
+
 // ═══════════════════════════════════════════════════════════════
 // TOAST
 // ═══════════════════════════════════════════════════════════════
@@ -305,7 +320,11 @@ const Views = {
         el.innerHTML = `<div class="empty-state"><i class="fas fa-umbrella-beach"></i><p>No upcoming holidays booked</p></div>`;
         return;
       }
-      el.innerHTML = upcoming.map(h => `
+      el.innerHTML = upcoming.map(h => {
+        const outlookBtn = h.status === 'approved'
+          ? `<a href="${outlookCalendarUrl(h, user.name)}" target="_blank" rel="noopener" class="outlook-icon-btn" title="Add to Outlook Calendar"><i class="fas fa-calendar-plus"></i></a>`
+          : '';
+        return `
         <div class="upcoming-item">
           <div class="upcoming-dates"><i class="fas fa-calendar-alt"></i>
             <span>${formatDate(h.startDate)} – ${formatDate(h.endDate)}</span>
@@ -313,8 +332,10 @@ const Views = {
           <div class="upcoming-meta">
             <span class="badge badge-${h.status}">${h.status}</span>
             <span class="upcoming-days">${h.days} day${h.days !== 1 ? 's' : ''}</span>
+            ${outlookBtn}
           </div>
-        </div>`).join('');
+        </div>`;
+      }).join('');
     }
   },
 
@@ -347,18 +368,24 @@ const Views = {
           <div class="empty-state"><i class="fas fa-calendar-times"></i><p>No holiday requests yet — go book one!</p></div>
         </td></tr>`; return;
       }
-      tbody.innerHTML = list.map(h => `
+      tbody.innerHTML = list.map(h => {
+        let action = '—';
+        if (h.status === 'pending') {
+          action = `<button class="btn btn-sm btn-danger" onclick="cancelHoliday('${h.id}')"><i class="fas fa-xmark"></i> Cancel</button>`;
+        } else if (h.status === 'approved') {
+          const url = outlookCalendarUrl(h, user.name);
+          action = `<a href="${url}" target="_blank" rel="noopener" class="btn btn-sm btn-outlook" title="Add to Outlook Calendar"><i class="fas fa-calendar-plus"></i> Add to Outlook</a>`;
+        }
+        return `
         <tr>
           <td>${formatDate(h.startDate)}</td>
           <td>${formatDate(h.endDate)}</td>
           <td><span class="days-badge">${h.days}</span></td>
           <td style="max-width:180px;color:var(--tx3);font-size:.78rem">${h.reason || '—'}</td>
           <td><span class="badge badge-${h.status}">${h.status}</span></td>
-          <td>${h.status === 'pending'
-          ? `<button class="btn btn-sm btn-danger" onclick="cancelHoliday('${h.id}')"><i class="fas fa-xmark"></i> Cancel</button>`
-          : '—'}
-          </td>
-        </tr>`).join('');
+          <td>${action}</td>
+        </tr>`;
+      }).join('');
     }
   },
 
